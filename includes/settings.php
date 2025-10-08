@@ -31,33 +31,119 @@ include_once VECTORRANK_PLUGIN_PATH . 'includes/header.php';
         <div class="vectorrank-main">
             <!-- Login Page -->
             <div id="page-login" class="vectorrank-page <?php echo !$is_logged_in ? 'active' : ''; ?>">
-                <div class="login-container">
-                    <div class="login-card">
-                        <h2><?php _e('Connect to VectorRank', 'vectorrank'); ?></h2>
-                        <p class="login-description"><?php _e('Sign in to access AI-powered search and recommendation features', 'vectorrank'); ?></p>
-                        
-                        <form id="vectorrank-login-form" class="login-form">
-                            <div class="form-group">
-                                <label for="username"><?php _e('Username or Email', 'vectorrank'); ?></label>
-                                <input type="text" id="username" name="username" required>
-                            </div>
+                <?php if (!$is_logged_in): ?>
+                    <!-- Login Form -->
+                    <div class="login-container">
+                        <div class="login-card">
+                            <h2><?php _e('Connect to VectorRank', 'vectorrank'); ?></h2>
+                            <p class="login-description"><?php _e('Sign in to access AI-powered search and recommendation features', 'vectorrank'); ?></p>
                             
-                            <div class="form-group">
-                                <label for="password"><?php _e('Password', 'vectorrank'); ?></label>
-                                <input type="password" id="password" name="password" required>
-                            </div>
+                            <form id="vectorrank-login-form" class="login-form">
+                                <div class="form-group">
+                                    <label for="email"><?php _e('Email', 'vectorrank'); ?></label>
+                                    <input type="text" id="email" name="email" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="password"><?php _e('Password', 'vectorrank'); ?></label>
+                                    <input type="password" id="password" name="password" required>
+                                </div>
+                                
+                                <button type="submit" class="button button-primary button-large login-btn">
+                                    <span class="btn-text"><?php _e('Login / Register', 'vectorrank'); ?></span>
+                                    <span class="btn-loader"></span>
+                                </button>
+                            </form>
                             
-                            <button type="submit" class="button button-primary button-large login-btn">
-                                <span class="btn-text"><?php _e('Login / Register', 'vectorrank'); ?></span>
-                                <span class="btn-loader"></span>
-                            </button>
-                        </form>
-                        
-                        <div class="login-footer">
-                            <p><?php _e("Don't have an account?", 'vectorrank'); ?> <a href="#" target="_blank"><?php _e('Create one here', 'vectorrank'); ?></a></p>
+                            <div class="login-footer">
+                                <p><?php _e("Don't have an account?", 'vectorrank'); ?> <a href="#" target="_blank"><?php _e('Create one here', 'vectorrank'); ?></a></p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                <?php else: ?>
+                    <!-- User Info Card -->
+                    <div class="user-info-container">
+                        <div class="user-info-card">
+                            <div class="user-info-header">
+                                <div class="user-avatar">
+                                    <span class="avatar-icon">👤</span>
+                                </div>
+                                <div class="user-details">
+                                    <h2><?php _e('Connected to VectorRank', 'vectorrank'); ?></h2>
+                                    <p class="user-email">
+                                        <?php 
+                                        // Debug: Let's see what's in settings
+                                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                                            error_log('[VectorRank Debug] Settings in user card: ' . print_r($settings, true));
+                                        }
+                                        
+                                        $user_email = isset($settings['email']) ? $settings['email'] : __('No email available', 'vectorrank');
+                                        echo esc_html($user_email); 
+                                        ?>
+                                    </p>
+                                    <span class="connection-status active">
+                                        <span class="status-dot"></span>
+                                        <?php _e('Connected', 'vectorrank'); ?>
+                                    </span>
+                                </div>
+                                <button id="vectorrank-logout" class="button button-secondary logout-btn">
+                                    <?php _e('Logout', 'vectorrank'); ?>
+                                </button>
+                            </div>
+                            
+                            <div class="user-info-content">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label"><?php _e('Status', 'vectorrank'); ?></span>
+                                        <span class="info-value status-<?php echo esc_attr($settings['user_status'] ?? 'active'); ?>">
+                                            <?php echo esc_html(ucfirst($settings['user_status'] ?? 'active')); ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <span class="info-label"><?php _e('Connected Since', 'vectorrank'); ?></span>
+                                        <span class="info-value">
+                                            <?php 
+                                            if (isset($settings['login_time'])) {
+                                                echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $settings['login_time']);
+                                            } else {
+                                                echo __('Just now', 'vectorrank');
+                                            }
+                                            ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <span class="info-label"><?php _e('Active Features', 'vectorrank'); ?></span>
+                                        <span class="info-value">
+                                            <?php echo count(array_filter($features)); ?>/<?php echo count($features); ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <span class="info-label"><?php _e('API Token', 'vectorrank'); ?></span>
+                                        <span class="info-value">
+                                            <?php if (isset($settings['client_token']) && !empty($settings['client_token'])): ?>
+                                                <span class="status-active">✓ <?php _e('Valid', 'vectorrank'); ?></span>
+                                            <?php else: ?>
+                                                <span class="status-inactive">✗ <?php _e('Missing', 'vectorrank'); ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="user-actions">
+                                    <button class="button button-primary test-connection-btn">
+                                        <?php _e('Test Connection', 'vectorrank'); ?>
+                                    </button>
+                                    <button class="button button-secondary refresh-token-btn">
+                                        <?php _e('Refresh Token', 'vectorrank'); ?>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Features Page -->
@@ -65,6 +151,13 @@ include_once VECTORRANK_PLUGIN_PATH . 'includes/header.php';
                 <div class="features-header">
                     <h2><?php _e('AI-Powered Features', 'vectorrank'); ?></h2>
                     <p><?php _e('Unlock the power of artificial intelligence for your WordPress site', 'vectorrank'); ?></p>
+                    
+                    <div class="features-actions">
+                        <button class="button button-primary button-large save-features-btn">
+                            <span class="btn-text"><?php _e('Save & Sync Features', 'vectorrank'); ?></span>
+                            <span class="btn-loader"></span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="features-grid">

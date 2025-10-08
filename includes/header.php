@@ -4,9 +4,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$settings = get_option('vectorrank_settings');
+$settings = get_option('vectorrank_settings', array());
 $is_logged_in = isset($settings['logged_in']) && $settings['logged_in'];
-$is_logged_in = true; // For testing purposes, remove this line in production
+// $is_logged_in = true; // For testing purposes, remove this line in production
 // Ensure all features default to true (active)
 $default_features = array(
     'ai_search' => true,

@@ -10,7 +10,7 @@
     --vectorrank-light: #f9fafb;
     --vectorrank-border: #e5e7eb;
     --vectorrank-text: #374151;
-    --vectorrank-text-light: #6b7280;
+    --vectorrank-text-light: #ccced1;
     --vectorrank-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --vectorrank-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
@@ -600,7 +600,57 @@
 .features-header p {
     color: var(--vectorrank-text-light);
     font-size: 1.1rem;
-    margin: 0;
+    margin: 0 0 1.5rem;
+}
+
+.features-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.save-features-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--vectorrank-primary) 0%, var(--vectorrank-primary-dark) 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.save-features-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vectorrank-shadow-lg);
+}
+
+.save-features-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.save-features-btn.loading .btn-text {
+    display: none;
+}
+
+.save-features-btn.loading .btn-loader {
+    display: inline-block;
+}
+
+.save-features-btn .btn-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 .features-grid {
@@ -894,6 +944,11 @@
 .vectorrank-message.error {
     border-left-color: var(--vectorrank-danger);
     color: var(--vectorrank-danger);
+}
+
+.vectorrank-message.info {
+    border-left-color: var(--vectorrank-primary);
+    color: var(--vectorrank-primary);
 }
 
 @keyframes slideIn {
@@ -2208,6 +2263,192 @@
     color: white;
 }
 
+/* User Info Card Styles */
+.user-info-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.user-info-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: var(--vectorrank-shadow-lg);
+    max-width: 600px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.user-info-header {
+    background: linear-gradient(135deg, var(--vectorrank-primary) 0%, var(--vectorrank-primary-dark) 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-icon {
+    font-size: 2.5rem;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-details h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.user-email {
+    margin: 0 0 0.75rem;
+    font-size: 1.1rem;
+    opacity: 0.9;
+    color: white;
+}
+
+.connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+.connection-status.active .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.logout-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.user-info-content {
+    padding: 2rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--vectorrank-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--vectorrank-dark);
+}
+
+.info-value.status-active {
+    color: var(--vectorrank-secondary);
+}
+
+.info-value.status-inactive {
+    color: var(--vectorrank-danger);
+}
+
+.info-value.status-pending {
+    color: var(--vectorrank-warning);
+}
+
+.user-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--vectorrank-border);
+}
+
+.test-connection-btn,
+.refresh-token-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.test-connection-btn:hover {
+    background: var(--vectorrank-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--vectorrank-shadow);
+}
+
+.refresh-token-btn:hover {
+    border-color: var(--vectorrank-primary);
+    color: var(--vectorrank-primary);
+}
+
+.api-status-check .status-checking {
+    color: var(--vectorrank-warning);
+    font-style: italic;
+}
+
+.api-status-check .status-online {
+    color: var(--vectorrank-secondary);
+}
+
+.api-status-check .status-offline {
+    color: var(--vectorrank-danger);
+}
+
 /* Responsive Design for Usage Page */
 @media (max-width: 768px) {
     .usage-sections {
@@ -2233,5 +2474,19 @@
     .billing-table th,
     .billing-table td {
         padding: 0.75rem 0.5rem;
+    }
+    
+    .user-info-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .user-actions {
+        flex-direction: column;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
     }
 }

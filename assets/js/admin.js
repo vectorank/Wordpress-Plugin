@@ -19,6 +19,9 @@
             // Login form
             $(document).on('submit', '#vectorrank-login-form', this.handleLogin);
             
+            // Debug: Check if form exists
+            console.log('VectorRank: Login form found:', $('#vectorrank-login-form').length);
+            
             // Logout
             $(document).on('click', '#vectorrank-logout', this.handleLogout);
             
@@ -28,6 +31,13 @@
             
             // Feature toggles
             $(document).on('change', '.feature-checkbox', this.handleFeatureToggle);
+            
+            // User info actions
+            $(document).on('click', '.test-connection-btn', this.testConnection);
+            $(document).on('click', '.refresh-token-btn', this.refreshToken);
+            
+            // Features save button
+            $(document).on('click', '.save-features-btn', this.saveFeatures);
             
             // Top navigation dropdown
             $(document).on('click', '#nav-dropdown-toggle', this.toggleDropdown);
@@ -66,11 +76,14 @@
             const $btnText = $button.find('.btn-text');
             const $btnLoader = $button.find('.btn-loader');
             
-            const username = $form.find('#username').val();
+            const email = $form.find('#email').val();
             const password = $form.find('#password').val();
             
-            if (!username || !password) {
-                VectorRank.showMessage('Please enter both username and password.', 'error');
+            // Debug logging
+            console.log('Form submission data:', { email: email, password: password ? '***' : 'empty' });
+            
+            if (!email || !password) {
+                VectorRank.showMessage('Please enter both email and password.', 'error');
                 return;
             }
             
@@ -82,21 +95,23 @@
                 type: 'POST',
                 data: {
                     action: 'vectorrank_login',
-                    username: username,
+                    email: email,
                     password: password,
                     nonce: vectorrank_ajax.nonce
                 },
                 success: function(response) {
+                    console.log('Login response:', response);
                     if (response.success) {
                         VectorRank.showMessage(response.data.message, 'success');
                         setTimeout(function() {
                             location.reload();
                         }, 1000);
                     } else {
-                        VectorRank.showMessage(response.data.message, 'error');
+                        VectorRank.showMessage(response.data.message || 'Login failed. Please check your credentials.', 'error');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.log('Login AJAX error:', { xhr: xhr, status: status, error: error });
                     VectorRank.showMessage('An error occurred. Please try again.', 'error');
                 },
                 complete: function() {
@@ -109,10 +124,140 @@
             e.preventDefault();
             
             if (confirm('Are you sure you want to logout?')) {
-                // In a real implementation, you would call your SaaS API to logout
-                // For now, we'll just reload the page
-                location.reload();
+                $.ajax({
+                    url: vectorrank_ajax.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'vectorrank_logout',
+                        nonce: vectorrank_ajax.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            VectorRank.showMessage(response.data.message, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            VectorRank.showMessage(response.data.message || 'Logout failed.', 'error');
+                        }
+                    },
+                    error: function() {
+                        VectorRank.showMessage('An error occurred during logout.', 'error');
+                        // Force reload anyway
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                });
             }
+        },
+
+        testConnection: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            const $statusCheck = $('.api-status-check');
+            
+            $button.prop('disabled', true).text('Testing...');
+            $statusCheck.find('.info-value').html('<span class="status-checking">Testing connection...</span>');
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_test_connection',
+                    nonce: vectorrank_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $statusCheck.find('.info-value').html('<span class="status-online">✓ Online (' + response.data.response_time + 'ms)</span>');
+                        VectorRank.showMessage('Connection test successful!', 'success');
+                    } else {
+                        $statusCheck.find('.info-value').html('<span class="status-offline">✗ Offline</span>');
+                        VectorRank.showMessage(response.data.message || 'Connection test failed', 'error');
+                    }
+                },
+                error: function() {
+                    $statusCheck.find('.info-value').html('<span class="status-offline">✗ Error</span>');
+                    VectorRank.showMessage('Connection test failed', 'error');
+                },
+                complete: function() {
+                    $button.prop('disabled', false).text('Test Connection');
+                }
+            });
+        },
+
+        refreshToken: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            
+            $button.prop('disabled', true).text('Refreshing...');
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_refresh_token',
+                    nonce: vectorrank_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        VectorRank.showMessage('Token refreshed successfully!', 'success');
+                    } else {
+                        VectorRank.showMessage(response.data.message || 'Failed to refresh token', 'error');
+                    }
+                },
+                error: function() {
+                    VectorRank.showMessage('Failed to refresh token', 'error');
+                },
+                complete: function() {
+                    $button.prop('disabled', false).text('Refresh Token');
+                }
+            });
+        },
+
+        saveFeatures: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            
+            // Show loading state
+            $button.addClass('loading').prop('disabled', true);
+            
+            // Show processing message
+            VectorRank.showMessage('Please wait, your data is preparing...', 'info');
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_save_features',
+                    nonce: vectorrank_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        VectorRank.showMessage(response.data.message, 'success');
+                        
+                        // If apps data is returned, show summary
+                        if (response.data.apps_count) {
+                            setTimeout(function() {
+                                VectorRank.showMessage('Successfully synced ' + response.data.apps_count + ' applications with their tokens!', 'success');
+                            }, 1000);
+                        }
+                    } else {
+                        VectorRank.showMessage(response.data.message || 'Failed to save features', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Save Features AJAX error:', { xhr: xhr, status: status, error: error });
+                    VectorRank.showMessage('An error occurred while saving features', 'error');
+                },
+                complete: function() {
+                    // Always reset button state
+                    $button.removeClass('loading').prop('disabled', false);
+                }
+            });
         },
 
         handleContentFilter: function(e) {
@@ -381,7 +526,15 @@
 
         showMessage: function(message, type) {
             const $messages = $('#vectorrank-messages');
-            const messageClass = type === 'success' ? 'success' : 'error';
+            let messageClass = 'info'; // default
+            
+            if (type === 'success') {
+                messageClass = 'success';
+            } else if (type === 'error') {
+                messageClass = 'error';
+            } else if (type === 'info') {
+                messageClass = 'info';
+            }
             
             const $message = $(`
                 <div class="vectorrank-message ${messageClass}">
