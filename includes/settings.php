@@ -157,6 +157,18 @@ include_once VECTORRANK_PLUGIN_PATH . 'includes/header.php';
                             <span class="btn-text"><?php _e('Save & Sync Features', 'vectorrank'); ?></span>
                             <span class="btn-loader"></span>
                         </button>
+                        <button class="button button-secondary button-large sync-posts-btn">
+                            <span class="btn-text"><?php _e('Sync Posts to AI', 'vectorrank'); ?></span>
+                            <span class="btn-loader"></span>
+                        </button>
+                        <button class="button button-secondary button-large sync-paragraphs-btn">
+                            <span class="btn-text"><?php _e('Sync by Paragraphs', 'vectorrank'); ?></span>
+                            <span class="btn-loader"></span>
+                        </button>
+                        <button class="button button-info button-large debug-apps-btn">
+                            <span class="btn-text"><?php _e('Debug Apps', 'vectorrank'); ?></span>
+                            <span class="btn-loader"></span>
+                        </button>
                     </div>
                 </div>
                 

@@ -606,6 +606,7 @@
 .features-actions {
     display: flex;
     justify-content: center;
+    gap: 1rem;
     margin-top: 1rem;
 }
 
@@ -651,6 +652,183 @@
     border-top: 2px solid white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+}
+
+/* Sync Posts Button */
+.sync-posts-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--vectorrank-secondary) 0%, #059669 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.sync-posts-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vectorrank-shadow-lg);
+}
+
+.sync-posts-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sync-posts-btn.loading .btn-text {
+    display: none;
+}
+
+.sync-posts-btn.loading .btn-loader {
+    display: inline-block;
+}
+
+.sync-posts-btn .btn-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Sync Paragraphs Button */
+.sync-paragraphs-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.sync-paragraphs-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vectorrank-shadow-lg);
+}
+
+.sync-paragraphs-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sync-paragraphs-btn.loading .btn-text {
+    display: none;
+}
+
+.sync-paragraphs-btn.loading .btn-loader {
+    display: inline-block;
+}
+
+.sync-paragraphs-btn .btn-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Debug Apps Button */
+.debug-apps-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--vectorrank-warning) 0%, #d97706 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.debug-apps-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vectorrank-shadow-lg);
+}
+
+.debug-apps-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.debug-apps-btn.loading .btn-text {
+    display: none;
+}
+
+.debug-apps-btn.loading .btn-loader {
+    display: inline-block;
+}
+
+.debug-apps-btn .btn-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* AI Search Results Styling */
+.ai-search-result {
+    border-left: 4px solid var(--vectorrank-primary);
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ai-search-result .search-certainty {
+    background: var(--vectorrank-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.ai-search-result.high-certainty {
+    border-left-color: var(--vectorrank-secondary);
+}
+
+.ai-search-result.high-certainty .search-certainty {
+    background: var(--vectorrank-secondary);
+}
+
+.ai-search-result.low-certainty {
+    border-left-color: var(--vectorrank-warning);
+}
+
+.ai-search-result.low-certainty .search-certainty {
+    background: var(--vectorrank-warning);
+}
+
+.ai-search-notice {
+    background: linear-gradient(135deg, var(--vectorrank-primary) 0%, var(--vectorrank-primary-dark) 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
 }
 
 .features-grid {

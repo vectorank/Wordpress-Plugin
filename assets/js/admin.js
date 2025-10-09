@@ -39,6 +39,15 @@
             // Features save button
             $(document).on('click', '.save-features-btn', this.saveFeatures);
             
+            // Sync posts button
+            $(document).on('click', '.sync-posts-btn', this.syncPosts);
+            
+            // Sync paragraphs button
+            $(document).on('click', '.sync-paragraphs-btn', this.syncParagraphs);
+            
+            // Debug apps button
+            $(document).on('click', '.debug-apps-btn', this.debugApps);
+            
             // Top navigation dropdown
             $(document).on('click', '#nav-dropdown-toggle', this.toggleDropdown);
             $(document).on('click', function(e) {
@@ -252,6 +261,202 @@
                 error: function(xhr, status, error) {
                     console.log('Save Features AJAX error:', { xhr: xhr, status: status, error: error });
                     VectorRank.showMessage('An error occurred while saving features', 'error');
+                },
+                complete: function() {
+                    // Always reset button state
+                    $button.removeClass('loading').prop('disabled', false);
+                }
+            });
+        },
+
+        syncPosts: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            
+            // Show confirmation dialog
+            if (!confirm('This will sync all your blog posts to the AI recommendation system. This may take a few minutes depending on the number of posts. Continue?')) {
+                return;
+            }
+            
+            // Show loading state
+            $button.addClass('loading').prop('disabled', true);
+            
+            // Show processing message
+            VectorRank.showMessage('Syncing posts to AI system, please wait...', 'info');
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_sync_posts',
+                    nonce: vectorrank_ajax.nonce
+                },
+                timeout: 300000, // 5 minutes timeout for large sync operations
+                success: function(response) {
+                    if (response.success) {
+                        VectorRank.showMessage(response.data.message, 'success');
+                        
+                        // Show additional details if available
+                        if (response.data.total_posts && response.data.synced_posts) {
+                            setTimeout(function() {
+                                VectorRank.showMessage(
+                                    'Sync completed: ' + response.data.synced_posts + '/' + response.data.total_posts + ' posts processed successfully!', 
+                                    'success'
+                                );
+                            }, 1500);
+                        }
+                    } else {
+                        VectorRank.showMessage(response.data.message || 'Failed to sync posts', 'error');
+                        
+                        // Show partial success details if available
+                        if (response.data.synced_posts && response.data.failed_posts) {
+                            setTimeout(function() {
+                                VectorRank.showMessage(
+                                    'Partial sync: ' + response.data.synced_posts + ' succeeded, ' + response.data.failed_posts + ' failed', 
+                                    'warning'
+                                );
+                            }, 1500);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Sync Posts AJAX error:', { xhr: xhr, status: status, error: error });
+                    
+                    if (status === 'timeout') {
+                        VectorRank.showMessage('Sync operation timed out. Some posts may have been synced successfully.', 'warning');
+                    } else {
+                        VectorRank.showMessage('An error occurred while syncing posts: ' + error, 'error');
+                    }
+                },
+                complete: function() {
+                    // Always reset button state
+                    $button.removeClass('loading').prop('disabled', false);
+                }
+            });
+        },
+
+        syncParagraphs: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            
+            // Show confirmation dialog
+            if (!confirm('This will sync all your blog posts paragraph by paragraph to the AI recommendation system. This may take longer than regular sync depending on the content. Continue?')) {
+                return;
+            }
+            
+            // Show loading state
+            $button.addClass('loading').prop('disabled', true);
+            
+            // Show processing message
+            VectorRank.showMessage('Syncing posts by paragraphs to AI system, please wait...', 'info');
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_sync_posts_by_paragraphs',
+                    nonce: vectorrank_ajax.nonce
+                },
+                timeout: 300000, // 5 minutes timeout for large sync operations
+                success: function(response) {
+                    if (response.success) {
+                        VectorRank.showMessage(response.data.message, 'success');
+                        
+                        // Show additional details if available
+                        if (response.data.total_paragraphs && response.data.synced_paragraphs) {
+                            setTimeout(function() {
+                                VectorRank.showMessage(
+                                    'Paragraph sync completed: ' + response.data.synced_paragraphs + '/' + response.data.total_paragraphs + ' paragraphs from ' + response.data.total_posts + ' posts processed successfully!', 
+                                    'success'
+                                );
+                            }, 1500);
+                        }
+                    } else {
+                        VectorRank.showMessage(response.data.message || 'Failed to sync paragraphs', 'error');
+                        
+                        // Show partial success details if available
+                        if (response.data.synced_paragraphs && response.data.failed_paragraphs) {
+                            setTimeout(function() {
+                                VectorRank.showMessage(
+                                    'Partial paragraph sync: ' + response.data.synced_paragraphs + ' succeeded, ' + response.data.failed_paragraphs + ' failed', 
+                                    'warning'
+                                );
+                            }, 1500);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Sync Paragraphs AJAX error:', { xhr: xhr, status: status, error: error });
+                    
+                    if (status === 'timeout') {
+                        VectorRank.showMessage('Paragraph sync operation timed out. Some paragraphs may have been synced successfully.', 'warning');
+                    } else {
+                        VectorRank.showMessage('An error occurred while syncing paragraphs: ' + error, 'error');
+                    }
+                },
+                complete: function() {
+                    // Always reset button state
+                    $button.removeClass('loading').prop('disabled', false);
+                }
+            });
+        },
+
+        debugApps: function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            
+            // Show loading state
+            $button.addClass('loading').prop('disabled', true);
+            
+            $.ajax({
+                url: vectorrank_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'vectorrank_debug_apps',
+                    nonce: vectorrank_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const data = response.data;
+                        
+                        // Create debug message
+                        let debugMessage = 'Debug Info:\n';
+                        debugMessage += 'Has Apps: ' + (data.has_apps ? 'Yes' : 'No') + '\n';
+                        debugMessage += 'Apps Count: ' + data.apps_count + '\n';
+                        debugMessage += 'Last Sync: ' + data.last_sync + '\n';
+                        debugMessage += 'Settings Keys: ' + data.all_settings_keys.join(', ') + '\n\n';
+                        
+                        if (data.apps_data && data.apps_data.length > 0) {
+                            debugMessage += 'Apps Found:\n';
+                            data.apps_data.forEach(function(app, index) {
+                                debugMessage += (index + 1) + '. Name: "' + app.name + '"\n';
+                                debugMessage += '   ID: ' + app.id + '\n';
+                                debugMessage += '   Write Token: ' + app.write_token.substring(0, 20) + '...\n';
+                                debugMessage += '   Search Token: ' + app.search_token.substring(0, 20) + '...\n\n';
+                            });
+                        } else {
+                            debugMessage += 'No apps data found.\n';
+                        }
+                        
+                        // Show in alert for now (you can improve this UI later)
+                        alert(debugMessage);
+                        
+                        // Also show as message
+                        VectorRank.showMessage('Debug info displayed in alert. Check browser console for detailed logs.', 'info');
+                        
+                        // Log to console for detailed inspection
+                        console.log('VectorRank Debug Apps:', data);
+                        
+                    } else {
+                        VectorRank.showMessage('Failed to get debug info: ' + (response.data.message || 'Unknown error'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Debug Apps AJAX error:', { xhr: xhr, status: status, error: error });
+                    VectorRank.showMessage('An error occurred while getting debug info', 'error');
                 },
                 complete: function() {
                     // Always reset button state
