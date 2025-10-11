@@ -272,6 +272,7 @@ function vectorrank_handle_login() {
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
                 'User-Agent' => 'VectorRank-WordPress-Plugin/1.0.0',
+                'Referer' => admin_url('admin.php?page=vectorrank-settings'), // Add admin page as referer
             ),
             'body' => wp_json_encode($login_data),
             'sslverify' => false, // Disabled for localhost/development
@@ -346,7 +347,6 @@ function vectorrank_handle_login() {
         $settings['email'] = $email;
         $settings['logged_in'] = true;
         $settings['client_token'] = $response_data['token']; // Main token for API access
-        
         // Save user status
         if (isset($response_data['status'])) {
             $settings['user_status'] = $response_data['status'];
@@ -622,6 +622,7 @@ function vectorrank_sync_posts() {
                     'Accept' => 'application/json',
                     'User-Agent' => 'VectorRank-WordPress-Plugin/1.0.0',
                     'Authorization' => 'Bearer ' . $recommendation_app['write_token'], // Use write token
+                    'Referer' => admin_url('admin.php?page=vectorrank-settings'), // Add admin page as referer
                 ),
                 'body' => wp_json_encode($api_data),
                 'sslverify' => false, // Disabled for localhost/development
@@ -717,23 +718,23 @@ function vectorrank_sync_posts_by_paragraphs() {
     error_log('[VectorRank Debug] Found ' . count($settings['apps']) . ' apps');
     
     // Find recommendation-app (for syncing data)
-    $recommendation_app = null;
+    $search_app = null;
     foreach ($settings['apps'] as $app) {
         error_log('[VectorRank Debug] Checking app: ' . $app['name']);
-        if ($app['name'] === 'recommendation-app') {
-            $recommendation_app = $app;
+        if ($app['name'] === 'search-app') {
+            $search_app = $app;
             error_log('[VectorRank Debug] Found recommendation-app with write_token: ' . substr($app['write_token'], 0, 20) . '...');
             break;
         }
     }
     
-    if (!$recommendation_app) {
-        error_log('[VectorRank Debug] Recommendation app not found. Available apps:');
+    if (!$search_app) {
+        error_log('[VectorRank Debug] Search app not found. Available apps:');
         foreach ($settings['apps'] as $app) {
             error_log('[VectorRank Debug] - App name: "' . $app['name'] . '"');
         }
         wp_send_json_error(array(
-            'message' => __('Recommendation app not found. Please ensure apps are synced properly. Available apps: ', 'vectorrank') . implode(', ', array_column($settings['apps'], 'name'))
+            'message' => __('Search app not found. Please ensure apps are synced properly. Available apps: ', 'vectorrank') . implode(', ', array_column($settings['apps'], 'name'))
         ));
         return;
     }
@@ -823,7 +824,7 @@ function vectorrank_sync_posts_by_paragraphs() {
         return;
     }
     
-    $batch_size = 10;
+    $batch_size = 150;
     $synced_paragraphs = 0;
     $failed_paragraphs = 0;
     $batches = array_chunk($all_paragraphs, $batch_size);
@@ -834,7 +835,7 @@ function vectorrank_sync_posts_by_paragraphs() {
     foreach ($batches as $batch_index => $paragraph_batch) {
         // Prepare API request
         $api_data = array(
-            'collection' => 'rec',
+            'collection' => 'search',
             'data' => $paragraph_batch
         );
         
@@ -857,7 +858,8 @@ function vectorrank_sync_posts_by_paragraphs() {
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
                     'User-Agent' => 'VectorRank-WordPress-Plugin/1.0.0',
-                    'Authorization' => 'Bearer ' . $recommendation_app['write_token'], // Use write token
+                    'Authorization' => 'Bearer ' . $search_app['write_token'], // Use write token
+                    'Referer' => admin_url('admin.php?page=vectorrank-settings'), // Add admin page as referer
                 ),
                 'body' => wp_json_encode($api_data),
                 'sslverify' => false, // Disabled for localhost/development
@@ -963,6 +965,7 @@ function vectorrank_save_features() {
                 'Accept' => 'application/json',
                 'User-Agent' => 'VectorRank-WordPress-Plugin/1.0.0',
                 'Authorization' => 'Bearer ' . $settings['client_token'], // Use saved token
+                'Referer' => admin_url('admin.php?page=vectorrank-settings'), // Add admin page as referer
             ),
             'sslverify' => false, // Disabled for localhost/development
             'reject_unsafe_urls' => false, // Allow localhost connections
@@ -1269,6 +1272,8 @@ function vectorrank_intercept_search_results($posts, $query) {
         // Convert AI results to WordPress post objects
         $ai_posts = vectorrank_convert_ai_results_to_posts($ai_results, $search_query);
         
+        error_log('[VectorRank] Returning ' . count($ai_posts) . ' AI posts to replace WordPress search results');
+        
         // Update query vars for pagination
         $query->found_posts = count($ai_posts);
         $query->max_num_pages = 1; // We'll implement pagination later if needed
@@ -1307,7 +1312,7 @@ function vectorrank_get_ai_search_results($search_query) {
     
     // Prepare search request
     $search_data = array(
-        'collection' => 'rec', // Using same collection as sync
+        'collection' => 'search', // Using same collection as sync
         'query' => $search_query,
         'properties' => null, // Empty properties for now
         'topN' => 20, // Get top 20 results
@@ -1315,7 +1320,6 @@ function vectorrank_get_ai_search_results($search_query) {
         'searchType' => 0 // As requested
     );
 
-    echo 'log' . json_encode($search_data);
 
     // Allow localhost connections for development
     add_filter('http_request_host_is_external', '__return_true');
@@ -1334,6 +1338,7 @@ function vectorrank_get_ai_search_results($search_query) {
                 'Accept' => 'application/json',
                 'User-Agent' => 'VectorRank-WordPress-Plugin/1.0.0',
                 'Authorization' => 'Bearer ' . $search_app['search_token'],
+                'Referer' => home_url($_SERVER['REQUEST_URI']), // Add current page as referer
             ),
             'body' => wp_json_encode($search_data),
             'sslverify' => false,
@@ -1344,12 +1349,12 @@ function vectorrank_get_ai_search_results($search_query) {
         error_log('[VectorRank] Sending request to: ' . $api_url . ' with data: ' . wp_json_encode($search_data));
         
         $response = wp_remote_request($api_url, $args);
-        
         if (!is_wp_error($response)) {
             $response_code = wp_remote_retrieve_response_code($response);
             $response_body = wp_remote_retrieve_body($response);
             
             if ($response_code === 200) {
+              
                 error_log('[VectorRank] AI search successful from: ' . $api_url);
                 break;
             } else {
@@ -1360,30 +1365,30 @@ function vectorrank_get_ai_search_results($search_query) {
             error_log('[VectorRank] AI search connection error: ' . $response->get_error_message());
         }
     }
-    
     // Remove filters
     remove_filter('http_request_host_is_external', '__return_true');
     remove_filter('block_local_requests', '__return_false');
-    
     if (is_wp_error($response)) {
         return $response;
     }
-    
     // Parse response
     $response_body = wp_remote_retrieve_body($response);
     $search_results = json_decode($response_body, true);
-    
     if (json_last_error() !== JSON_ERROR_NONE) {
         error_log('[VectorRank] Invalid JSON in search response: ' . $response_body);
         return new WP_Error('invalid_json', 'Invalid JSON response');
     }
-    
     if (!is_array($search_results)) {
         error_log('[VectorRank] Unexpected search response format: ' . $response_body);
         return new WP_Error('invalid_format', 'Unexpected response format');
     }
     
     error_log('[VectorRank] AI search returned ' . count($search_results) . ' results');
+    
+    // Debug: Log the actual results structure
+    if (!empty($search_results)) {
+        error_log('[VectorRank] First search result structure: ' . print_r($search_results[0], true));
+    }
     
     return $search_results;
 }
@@ -1392,27 +1397,46 @@ function vectorrank_get_ai_search_results($search_query) {
  * Convert AI search results to WordPress post objects
  */
 function vectorrank_convert_ai_results_to_posts($ai_results, $search_query) {
-    $posts = array();
+    error_log('[VectorRank] Converting ' . count($ai_results) . ' AI results to WordPress posts');
     
-    foreach ($ai_results as $result) {
-        if (!isset($result['Id']) || !isset($result['Content'])) {
+    $posts = array();
+    $processed_ids = array(); // Track processed IDs to skip duplicates
+    
+    foreach ($ai_results as $result_index => $result) {
+        error_log('[VectorRank] Processing result ' . $result_index . ': ' . print_r($result, true));
+        // Handle both uppercase and lowercase field names from API
+        $id = isset($result['Id']) ? $result['Id'] : (isset($result['id']) ? $result['id'] : null);
+        $content = isset($result['Content']) ? $result['Content'] : (isset($result['content']) ? $result['content'] : null);
+        $certainty = isset($result['Certainty']) ? $result['Certainty'] : (isset($result['certainty']) ? $result['certainty'] : 0);
+        
+        if (empty($id) || empty($content)) {
+            error_log('[VectorRank] Skipping result ' . $result_index . ' - missing id or content. Available fields: ' . implode(', ', array_keys($result)));
             continue;
         }
         
-        $certainty = isset($result['Certainty']) ? $result['Certainty'] : 0;
+        
+        error_log('[VectorRank] Processing result ' . $result_index . ' with id: ' . $id);
         
         // Try to find the original WordPress post by ID
         $original_post = null;
         $post_id = null;
         
         // Check if this is a paragraph result (ID format: postId_paragraphIndex)
-        if (strpos($result['Id'], '_') !== false) {
-            $id_parts = explode('_', $result['Id']);
+        if (strpos($id, '_') !== false) {
+            $id_parts = explode('_', $id);
             $post_id = intval($id_parts[0]);
         } else {
-            $post_id = intval($result['Id']);
+            $post_id = intval($id);
         }
         
+        // Skip duplicate IDs
+        if (in_array($post_id, $processed_ids)) {
+            error_log('[VectorRank] Skipping duplicate result ' . $result_index . ' with id: ' . $id);
+            continue;
+        }
+        
+        // Add ID to processed list
+        $processed_ids[] = $post_id;
         if ($post_id > 0) {
             $original_post = get_post($post_id);
         }
@@ -1420,39 +1444,81 @@ function vectorrank_convert_ai_results_to_posts($ai_results, $search_query) {
         // Create a virtual post object for search results
         $virtual_post = new stdClass();
         
-        if ($original_post && !is_wp_error($original_post)) {
-            // Use original post data
+        if ($original_post && !is_wp_error($original_post) && $original_post->post_status === 'publish') {
+            // Use original WordPress post data with AI-matched snippet
             $virtual_post->ID = $original_post->ID;
             $virtual_post->post_title = $original_post->post_title;
-            $virtual_post->post_content = $result['Content']; // Use AI-matched content
-            $virtual_post->post_excerpt = wp_trim_words($result['Content'], 30);
+            
+            // Get post excerpt - try manual excerpt first, then auto-generate from content
+            $post_excerpt = '';
+            if (!empty($original_post->post_excerpt)) {
+                $post_excerpt = $original_post->post_excerpt;
+            } else {
+                // Generate excerpt from full post content
+                $post_excerpt = wp_trim_words(strip_tags($original_post->post_content), 25);
+            }
+            
+            // Create a combined content: WordPress excerpt + AI matched content
+            $combined_content = '<div class="wp-excerpt">' . $post_excerpt . '</div>';
+            $combined_content .= '<div class="ai-matched-snippet"><strong>AI Matched Content:</strong> ' . $content . '</div>';
+            
+            $virtual_post->post_content = $combined_content;
+            $virtual_post->post_excerpt = $post_excerpt; // Use WordPress excerpt for excerpt
             $virtual_post->post_date = $original_post->post_date;
             $virtual_post->post_author = $original_post->post_author;
             $virtual_post->post_status = 'publish';
             $virtual_post->post_type = $original_post->post_type;
             $virtual_post->post_name = $original_post->post_name;
             $virtual_post->guid = get_permalink($original_post->ID);
+            
+            // Add WordPress metadata
+            $virtual_post->wp_post_found = true;
+            $virtual_post->wp_post_url = get_permalink($original_post->ID);
+            
+            error_log('[VectorRank] Found WordPress post: "' . $original_post->post_title . '" (ID: ' . $original_post->ID . ') - URL: ' . get_permalink($original_post->ID));
         } else {
-            // Create virtual post for unmatched results
+            // Create virtual post for unmatched results or unpublished posts
             $virtual_post->ID = 0; // Virtual post
-            $virtual_post->post_title = 'AI Search Result (' . round($certainty * 100, 1) . '% match)';
-            $virtual_post->post_content = $result['Content'];
-            $virtual_post->post_excerpt = wp_trim_words($result['Content'], 30);
+            
+            // Try to create a meaningful title from the content
+            $content_words = explode(' ', $content);
+            $title_words = array_slice($content_words, 0, 8); // First 8 words
+            $generated_title = implode(' ', $title_words);
+            if (strlen($generated_title) > 60) {
+                $generated_title = substr($generated_title, 0, 57) . '...';
+            }
+            
+            $virtual_post->post_title = $generated_title . ' (' . round($certainty * 100, 1) . '% match)';
+            $virtual_post->post_content = '<div class="ai-only-result">' . $content . '</div>';
+            $virtual_post->post_excerpt = wp_trim_words($content, 25);
             $virtual_post->post_date = current_time('mysql');
             $virtual_post->post_author = 1;
             $virtual_post->post_status = 'publish';
             $virtual_post->post_type = 'ai_result';
-            $virtual_post->post_name = 'ai-result-' . sanitize_title($result['Id']);
-            $virtual_post->guid = home_url('/ai-result-' . $result['Id']);
+            
+            // Add metadata for AI-only results
+            $virtual_post->wp_post_found = false;
+            
+            if ($post_id > 0) {
+                error_log('[VectorRank] WordPress post ID ' . $post_id . ' not found or not published');
+            } else {
+                error_log('[VectorRank] Non-numeric ID, creating AI-only result');
+            }
+            $virtual_post->post_name = 'ai-result-' . sanitize_title($id);
+            $virtual_post->guid = home_url('/ai-result-' . sanitize_title($id));
         }
         
         // Add AI-specific metadata
         $virtual_post->ai_certainty = $certainty;
-        $virtual_post->ai_result_id = $result['Id'];
+        $virtual_post->ai_result_id = $id;
         $virtual_post->ai_search_query = $search_query;
         
         $posts[] = $virtual_post;
+        
+        error_log('[VectorRank] Created virtual post: ' . $virtual_post->post_title . ' (ID: ' . $virtual_post->ID . ')');
     }
+    
+    error_log('[VectorRank] Converted ' . count($posts) . ' AI results to WordPress posts');
     
     return $posts;
 }
@@ -1490,7 +1556,16 @@ function vectorrank_modify_ai_search_content($content) {
             <span class="search-certainty ' . $certainty_class . '">' . $certainty_percent . '% match</span>
         </div>';
         
-        $content = $ai_indicator . $content;
+        // Add post meta information if this is a WordPress post
+        $post_meta = '';
+        if (isset($post->wp_post_found) && $post->wp_post_found && isset($post->wp_post_url)) {
+            $post_meta = '<div class="ai-post-meta">
+                <span>📄 From WordPress Post</span>
+                <a href="' . esc_url($post->wp_post_url) . '">Read Full Post →</a>
+            </div>';
+        }
+        
+        $content = $ai_indicator . $content . $post_meta;
     }
     
     return $content;
@@ -1546,6 +1621,59 @@ function vectorrank_add_search_styles() {
             
             body.search .search-results-header {
                 display: block;
+            }
+            
+            /* WordPress post content styles */
+            .wp-excerpt {
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                border-left: 4px solid #6366f1;
+                font-style: italic;
+            }
+            
+            .ai-matched-snippet {
+                background: #fff3cd;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                border-left: 4px solid #ffc107;
+                margin-top: 1rem;
+            }
+            
+            .ai-matched-snippet strong {
+                color: #856404;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+            
+            .ai-only-result {
+                background: #e3f2fd;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                border-left: 4px solid #2196f3;
+            }
+            
+            /* Post meta info */
+            .ai-post-meta {
+                background: rgba(99, 102, 241, 0.1);
+                padding: 0.5rem 1rem;
+                border-radius: 0.25rem;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .ai-post-meta a {
+                color: #6366f1;
+                text-decoration: none;
+                font-weight: 600;
+            }
+            
+            .ai-post-meta a:hover {
+                text-decoration: underline;
             }
         </style>';
         
