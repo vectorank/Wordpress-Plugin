@@ -1,0 +1,173 @@
+/* VectorRank Recommendations Widget Styles */
+
+/* Default custom styles */
+.vectorrank-recommendations.custom-style {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 15px;
+}
+
+/* Theme style integration - inherit from theme's recent posts widget */
+.vectorrank-recommendations.theme-style {
+    /* Inherit theme styles by using same classes as WP_Widget_Recent_Posts */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+.vectorrank-recommendations.theme-style ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.vectorrank-recommendations.theme-style li {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.vectorrank-recommendations.theme-style li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.vectorrank-recommendations.custom-style .vectorrank-recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.vectorrank-recommendations.custom-style .recommendation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.vectorrank-recommendations.custom-style .recommendation-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #fff;
+}
+
+.vectorrank-recommendations .recommendation-thumbnail {
+    flex-shrink: 0;
+}
+
+.recommendation-thumbnail img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.recommendation-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.recommendation-title {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.recommendation-title a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.recommendation-title a:hover {
+    color: #6366f1;
+}
+
+.recommendation-date {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.recommendation-excerpt {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.vectorrank-powered-by {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e1e5e9;
+    text-align: center;
+}
+
+.vectorrank-powered-by small {
+    color: #6366f1;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.no-recommendations {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .recommendation-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .recommendation-thumbnail img {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* Widget admin styles */
+.widget-content .vectorrank-recommendations {
+    /* border: 1px solid #ddd; */
+    margin-top: 10px;
+}
+
+/* Alternative compact layout */
+.vectorrank-recommendations.compact .recommendation-item {
+    padding: 10px;
+    gap: 8px;
+}
+
+.vectorrank-recommendations.compact .recommendation-thumbnail img {
+    width: 40px;
+    height: 40px;
+}
+
+.vectorrank-recommendations.compact .recommendation-title {
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.vectorrank-recommendations.compact .recommendation-excerpt {
+    font-size: 11px;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+}

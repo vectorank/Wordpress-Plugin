@@ -1,0 +1,26 @@
+/* Twenty Twenty-One Theme Compatibility */
+.vectorrank-recommendations.theme-style {
+    font-family: var(--global--font-secondary);
+}
+
+.vectorrank-recommendations.theme-style .recommendation-title a {
+    color: var(--global--color-primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.vectorrank-recommendations.theme-style .recommendation-title a:hover {
+    color: var(--global--color-primary-hover);
+    text-decoration: underline;
+}
+
+.vectorrank-recommendations.theme-style .recommendation-date {
+    color: var(--global--color-primary);
+    font-size: var(--global--font-size-xs);
+}
+
+.vectorrank-recommendations.theme-style .recommendation-excerpt {
+    color: var(--global--color-dark-gray);
+    font-size: var(--global--font-size-sm);
+    line-height: var(--global--line-height-body);
+}

@@ -1,0 +1,32 @@
+/* Astra Theme Compatibility */
+.vectorrank-recommendations.theme-style {
+    font-family: inherit;
+}
+
+.vectorrank-recommendations.theme-style .recommendation-title a {
+    color: var(--ast-global-color-2, #3a3a3a);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.vectorrank-recommendations.theme-style .recommendation-title a:hover {
+    color: var(--ast-global-color-0, #0073aa);
+}
+
+.vectorrank-recommendations.theme-style .recommendation-date {
+    color: var(--ast-global-color-3, #4B4F58);
+    font-size: 14px;
+}
+
+.vectorrank-recommendations.theme-style .recommendation-excerpt {
+    color: var(--ast-global-color-3, #4B4F58);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.vectorrank-recommendations.theme-style li {
+    border-bottom: 1px solid #eeeeee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}

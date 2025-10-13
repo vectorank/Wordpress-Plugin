@@ -26,6 +26,12 @@ define('VECTORRANK_RECOMMENDATION_BASE_IP', 'https://host.docker.internal:2653')
 // Include API Manager
 require_once VECTORRANK_PLUGIN_PATH . 'common/apimanager.php';
 
+// Include Widgets
+require_once VECTORRANK_PLUGIN_PATH . 'widgets/widgets-loader.php';
+
+// Include Theme Integration
+require_once VECTORRANK_PLUGIN_PATH . 'includes/theme-integration.php';
+
 /**
  * Main VectorRank Plugin Class
  */
@@ -213,6 +219,9 @@ add_action('wp_ajax_vectorrank_sync_posts_by_paragraphs', 'vectorrank_sync_posts
 add_action('wp_ajax_vectorrank_debug_apps', 'vectorrank_debug_apps');
 add_action('wp_ajax_vectorrank_get_content', 'vectorrank_get_content');
 add_action('wp_ajax_vectorrank_toggle_feature', 'vectorrank_toggle_feature');
+
+// Add shortcode for recommendations
+add_shortcode('vectorrank_recommendations', 'vectorrank_recommendations_shortcode');
 
 function vectorrank_handle_login() {
     check_ajax_referer('vectorrank_nonce', 'nonce');
@@ -1530,6 +1539,14 @@ function vectorrank_enqueue_frontend_styles() {
     if (is_search()) {
         wp_enqueue_style('vectorrank-frontend', VECTORRANK_PLUGIN_URL . 'assets/css/frontend.css', array(), VECTORRANK_PLUGIN_VERSION);
     }
+    
+    // Enqueue recommendations widget styles on single posts
+    if (is_single() || is_active_widget(false, false, 'vectorrank_recommendations', true)) {
+        wp_enqueue_style('vectorrank-recommendations-widget', VECTORRANK_PLUGIN_URL . 'assets/css/recommendations-widget.css', array(), VECTORRANK_PLUGIN_VERSION);
+        
+        // Enqueue theme compatibility styles if needed
+        vectorrank_enqueue_theme_compatibility_styles();
+    }
 }
 
 /**
@@ -1690,12 +1707,12 @@ function vectorrank_add_search_styles() {
                     }
                 }
                 
-                if ($has_ai_results) {
-                    echo '<div class="search-results-header">
-                        <h3>🤖 AI-Powered Search Results</h3>
-                        <p>These results are powered by artificial intelligence and ranked by relevance.</p>
-                    </div>';
-                }
+                // if ($has_ai_results) {
+                //     echo '<div class="search-results-header">
+                //         <h3>🤖 AI-Powered Search Results</h3>
+                //         <p>These results are powered by artificial intelligence and ranked by relevance.</p>
+                //     </div>';
+                // }
             }
         });
     }
@@ -1723,4 +1740,126 @@ function vectorrank_toggle_feature() {
         ),
         'status' => $status
     ));
+}
+
+/**
+ * Shortcode for displaying recommendations
+ * Usage: [vectorrank_recommendations count="5" show_thumbnail="true" show_excerpt="true" show_date="false"]
+ */
+function vectorrank_recommendations_shortcode($atts) {
+    // Only show on single post pages unless explicitly overridden
+    if (!is_single() && !isset($atts['force'])) {
+        return '';
+    }
+
+    $atts = shortcode_atts(array(
+        'count' => 5,
+        'show_thumbnail' => 'true',
+        'show_excerpt' => 'true', 
+        'show_date' => 'false',
+        'title' => '',
+        'class' => '',
+        'force' => 'false'
+    ), $atts);
+
+    // Convert string booleans to actual booleans
+    $instance = array(
+        'count' => intval($atts['count']),
+        'show_thumbnail' => filter_var($atts['show_thumbnail'], FILTER_VALIDATE_BOOLEAN),
+        'show_excerpt' => filter_var($atts['show_excerpt'], FILTER_VALIDATE_BOOLEAN),
+        'show_date' => filter_var($atts['show_date'], FILTER_VALIDATE_BOOLEAN),
+        'title' => $atts['title']
+    );
+
+    // Create a temporary widget instance to use its methods
+    $widget = new VectorRank_Recommendations_Widget();
+    
+    global $post;
+    if (!$post && is_single()) {
+        $post = get_queried_object();
+    }
+    
+    if (!$post) {
+        return '<p>' . __('No post context available for recommendations.', 'vectorrank') . '</p>';
+    }
+
+    // Check if recommendations are enabled
+    $settings = get_option('vectorrank_settings', array());
+    if (!isset($settings['features']['personalized_recommendations']) || !$settings['features']['personalized_recommendations']) {
+        return '<p>' . __('Recommendations are currently disabled.', 'vectorrank') . '</p>';
+    }
+
+    // Get recommendations using the widget's private method via reflection
+    $reflection = new ReflectionClass($widget);
+    $get_ai_recommendations = $reflection->getMethod('get_ai_recommendations');
+    $get_ai_recommendations->setAccessible(true);
+    $recommendations = $get_ai_recommendations->invoke($widget, $post->ID, $instance);
+
+    if (empty($recommendations)) {
+        return '<p class="no-recommendations">' . __('No recommendations available at the moment.', 'vectorrank') . '</p>';
+    }
+
+    // Start output buffering
+    ob_start();
+    
+    echo '<div class="vectorrank-recommendations shortcode-recommendations ' . esc_attr($atts['class']) . '">';
+    
+    if (!empty($instance['title'])) {
+        echo '<h3 class="recommendations-title">' . esc_html($instance['title']) . '</h3>';
+    }
+    
+    echo '<div class="vectorrank-recommendations-list">';
+
+    // Use the widget's display method via reflection
+    $display_recommendation_item = $reflection->getMethod('display_recommendation_item');
+    $display_recommendation_item->setAccessible(true);
+    
+    foreach ($recommendations as $recommendation) {
+        $display_recommendation_item->invoke($widget, $recommendation, $instance);
+    }
+
+    echo '</div>';
+    echo '<div class="vectorrank-powered-by">';
+    // echo '<small>' . __('Powered by VectorRank AI', 'vectorrank') . '</small>';
+    echo '</div>';
+    echo '</div>';
+
+    return ob_get_clean();
+}
+
+/**
+ * Template function for displaying recommendations
+ * Usage in theme: <?php vectorrank_display_recommendations(); ?>
+ */
+function vectorrank_display_recommendations($args = array()) {
+    $defaults = array(
+        'count' => 5,
+        'show_thumbnail' => true,
+        'show_excerpt' => true,
+        'show_date' => false,
+        'title' => __('Related Posts', 'vectorrank'),
+        'echo' => true,
+        'before' => '<div class="vectorrank-recommendations-wrapper">',
+        'after' => '</div>'
+    );
+    
+    $args = wp_parse_args($args, $defaults);
+    
+    // Convert to shortcode attributes format
+    $shortcode_atts = array(
+        'count' => $args['count'],
+        'show_thumbnail' => $args['show_thumbnail'] ? 'true' : 'false',
+        'show_excerpt' => $args['show_excerpt'] ? 'true' : 'false', 
+        'show_date' => $args['show_date'] ? 'true' : 'false',
+        'title' => $args['title'],
+        'force' => 'true' // Allow display even if not on single post page
+    );
+    
+    $output = $args['before'] . vectorrank_recommendations_shortcode($shortcode_atts) . $args['after'];
+    
+    if ($args['echo']) {
+        echo $output;
+    } else {
+        return $output;
+    }
 }
