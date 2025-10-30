@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: VectorRank Plugin
+ * Plugin Name: VectoRank Plugin
  * Description: AI-powered search and recommendation system for WordPress with advanced analytics and personalization features.
  * Version: 1.0.0
- * Author: VectorRank
- * Text Domain: vectorrank
+ * Author: VectoRank
+ * Text Domain: vectorank
  * Domain Path: /languages
  */
 
@@ -19,9 +19,10 @@ define('VECTORRANK_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('VECTORRANK_PLUGIN_VERSION', '1.0.0');
 
 // Define base IP constants for different services
-define('VECTORRANK_APP_BASE_IP', 'https://host.docker.internal:44381');
-define('VECTORRANK_SEARCH_BASE_IP', 'https://host.docker.internal:7260');
-define('VECTORRANK_RECOMMENDATION_BASE_IP', 'https://host.docker.internal:2653');
+define('VECTORRANK_APP_BASE_IP','https://app.vectorank.com' );//'https://host.docker.internal:44381'
+define('VECTORRANK_SEARCH_BASE_IP', 'https://api.vectorank.com'); //'https://host.docker.internal:7260'
+define('VECTORRANK_RECOMMENDATION_BASE_IP', 'https://rec.vectorank.com'); //'https://host.docker.internal:2653'
+define('VECTORRANK_ANALYTICS_BASE_IP','https://analytics.vectorank.com' );//'https://host.docker.internal:???'
 
 // Include API Manager
 require_once VECTORRANK_PLUGIN_PATH . 'common/apimanager.php';
@@ -430,7 +431,7 @@ function vectorrank_handle_login() {
 function vectorrank_handle_logout() {
     check_ajax_referer('vectorrank_nonce', 'nonce');
     
-    // Clear all authentication data
+    // Clear all authentication and user-specific data
     $settings = get_option('vectorrank_settings', array());
     
     // Remove authentication tokens
@@ -441,13 +442,26 @@ function vectorrank_handle_logout() {
     unset($settings['user_status']);
     unset($settings['login_time']);
     
+    // Remove apps data (contains write_token and search_token)
+    unset($settings['apps']);
+    
+    // Remove sync-related data
+    unset($settings['last_sync']);
+    unset($settings['last_post_sync']);
+    unset($settings['last_paragraph_sync']);
+    unset($settings['synced_posts_count']);
+    unset($settings['synced_paragraphs_count']);
+    
+    // Keep only the features settings (user preferences should persist)
+    // but reset all user-specific authentication and sync data
+    
     update_option('vectorrank_settings', $settings);
     
     // Log the logout
-    error_log('[VectorRank] User logged out successfully');
+    error_log('[VectorRank] User logged out successfully - all user-specific data cleared');
     
     wp_send_json_success(array(
-        'message' => __('Logged out successfully.', 'vectorrank')
+        'message' => __('Logged out successfully. All user data has been cleared.', 'vectorrank')
     ));
 }
 
